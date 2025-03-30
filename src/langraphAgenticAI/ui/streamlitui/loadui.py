@@ -3,11 +3,13 @@ import os
 from datetime import date
 from langchain_core.messages import AIMessage, HumanMessage
 from src.langraphAgenticAI.ui.uiconfigfile import Config
+from src.langraphAgenticAI.LLMS.groqllm import GroqLLM
 
 class LoadStreamUI:
     def __init__(self):
         self.config = Config()
         self.llm_options = self.config.get_llm_options()
+        self.user_controls = {}
         
     def setup_page(self):
         """Set up the Streamlit page configuration."""
@@ -22,6 +24,11 @@ class LoadStreamUI:
         with st.sidebar:
             st.title("Configuration")
             
+            # API Key Input (hidden)
+            api_key = st.text_input("API Key", type="password", 
+                                    value=os.environ.get("GROQ_API_KEY", ""))
+            self.user_controls["GROQ_API_KEY"] = api_key
+            
             # LLM Provider Selection
             llm_provider = st.selectbox(
                 "Select LLM Provider",
@@ -29,6 +36,7 @@ class LoadStreamUI:
                 index=0 if self.llm_options['llm_option'] == 'Groq' else 
                       1 if self.llm_options['llm_option'] == 'OpenAI' else 2
             )
+            self.user_controls["llm_provider"] = llm_provider
             
             # Model Selection based on provider
             model_options = self.llm_options['model_options'][llm_provider.lower()]
@@ -37,6 +45,7 @@ class LoadStreamUI:
                 options=model_options,
                 index=0
             )
+            self.user_controls["selected_groq_model"] = selected_model
             
             # Temperature Slider
             temperature = st.slider(
@@ -46,6 +55,7 @@ class LoadStreamUI:
                 value=self.llm_options['temperature'],
                 step=0.1
             )
+            self.user_controls["temperature"] = temperature
             
             # Max Tokens Input
             max_tokens = st.number_input(
@@ -55,6 +65,7 @@ class LoadStreamUI:
                 value=self.llm_options['max_tokens'],
                 step=1
             )
+            self.user_controls["max_tokens"] = max_tokens
             
             # Top P Slider
             top_p = st.slider(
@@ -64,6 +75,7 @@ class LoadStreamUI:
                 value=self.llm_options['top_p'],
                 step=0.05
             )
+            self.user_controls["top_p"] = top_p
             
             # Use Case Selection
             usecase = st.selectbox(
@@ -71,6 +83,7 @@ class LoadStreamUI:
                 options=self.config.get('Default', 'USECASE_OPTIONS', '').split(','),
                 index=0
             )
+            self.user_controls["usecase"] = usecase
             
             st.divider()
             st.markdown("### About")
@@ -78,6 +91,17 @@ class LoadStreamUI:
             This is an AI-powered application built with LangGraph.
             It provides a flexible interface for interacting with various LLM providers.
             """)
+            
+    def get_llm(self):
+        """Get the appropriate LLM based on user selection."""
+        llm_provider = self.user_controls.get("llm_provider", "Groq")
+        
+        if llm_provider == "Groq":
+            return GroqLLM(self.user_controls)
+        # Add more LLM providers here as needed
+        else:
+            st.error(f"LLM provider {llm_provider} not implemented yet.")
+            return None
             
     def create_main_interface(self):
         """Create the main chat interface."""
@@ -102,8 +126,13 @@ class LoadStreamUI:
             # Add AI response to chat history
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
-                    # TODO: Implement actual AI response logic here
-                    response = "This is a placeholder response. AI integration coming soon!"
+                    # Get the appropriate LLM and generate response
+                    llm = self.get_llm()
+                    if llm:
+                        response = llm.generate_response(prompt)
+                    else:
+                        response = "Unable to initialize LLM. Please check your configuration."
+                    
                     st.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
                     
