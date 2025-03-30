@@ -1,4 +1,5 @@
-from ui.streamlitui.loadui import LoadStreamUI
+import streamlit as st
+from src.langraphAgenticAI.ui.streamlitui.loadui import LoadStreamUI
 
 def main():
     """Main entry point for the application."""
@@ -6,4 +7,4 @@ def main():
     ui.run()
 
 if __name__ == "__main__":
-    main()
+    main() 
