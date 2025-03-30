@@ -2,6 +2,10 @@ import os
 import sys
 import streamlit as st
 
+# Add debugging to see environment variables
+print("Current working directory:", os.getcwd())
+print("Checking if .env file exists:", os.path.exists(".env"))
+
 # Add the root directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -9,9 +13,17 @@ from src.langraphAgenticAI.ui.streamlitui.loadui import LoadStreamUI
 from src.langraphAgenticAI.graph.graph_builder import GraphBuilder
 from src.langraphAgenticAI.LLMS.groqllm import GroqLLM
 from src.langraphAgenticAI.utils.env_loader import load_env_variables, get_env_var
+from src.langraphAgenticAI.loadui import load_ui
 
 # Load environment variables from .env file
 load_env_variables()
+
+# Debug: Print all environment variables to check if loading worked
+print("After loading .env, GROQ_API_KEY exists:", "GROQ_API_KEY" in os.environ)
+if "GROQ_API_KEY" in os.environ:
+    print("GROQ_API_KEY value length:", len(os.environ["GROQ_API_KEY"]))
+else:
+    print("GROQ_API_KEY not found in environment variables")
 
 def initialize_graph(user_controls):
     """
@@ -48,44 +60,39 @@ def initialize_graph(user_controls):
         return None
 
 def main():
-    """Main entry point for the application."""
-    ui = LoadStreamUI()
+    # Load UI and get user inputs
+    ui_data = load_ui()
     
-    # Set up the callback to create and run the graph
-    def process_message(message):
-        """
-        Process a message using the LangGraph.
+    # Initialize GroqLLM with user controls
+    groq_llm = GroqLLM(ui_data["user_controls"])
+    
+    # Handle chat input
+    if ui_data["user_input"]:
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": ui_data["user_input"]})
         
-        Args:
-            message (str): User message to process.
+        # Display the user message
+        with st.chat_message("user"):
+            st.markdown(ui_data["user_input"])
+        
+        # Display assistant response
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            message_placeholder.markdown("Thinking...")
             
-        Returns:
-            str: Generated response.
-        """
-        # Initialize the graph with current user controls
-        graph = initialize_graph(ui.user_controls)
-        
-        if not graph:
-            return "Error: Failed to initialize the graph. Please check your configuration."
-        
-        # Run the graph with the input message
-        result = graph.invoke({
-            "messages": [{"role": "user", "content": message}]
-        })
-        
-        # Extract the AI response from the result
-        if result and result.get("messages"):
-            ai_messages = [msg for msg in result["messages"] if msg["role"] == "assistant"]
-            if ai_messages:
-                return ai_messages[-1]["content"]
-        
-        return "Error: Failed to generate a response."
-    
-    # Set the message processor in the UI
-    ui.message_processor = process_message
-    
-    # Run the UI
-    ui.run()
+            try:
+                # Get response from GroqLLM
+                response = groq_llm.generate_response(ui_data["user_input"])
+                
+                # Update placeholder with response
+                message_placeholder.markdown(response)
+                
+                # Add assistant response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                
+            except Exception as e:
+                message_placeholder.markdown(f"Error: {str(e)}")
+                st.session_state.messages.append({"role": "assistant", "content": f"Error: {str(e)}"})
 
 if __name__ == "__main__":
     main()
