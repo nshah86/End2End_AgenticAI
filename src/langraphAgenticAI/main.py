@@ -8,6 +8,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from src.langraphAgenticAI.ui.streamlitui.loadui import LoadStreamUI
 from src.langraphAgenticAI.graph.graph_builder import GraphBuilder
 from src.langraphAgenticAI.LLMS.groqllm import GroqLLM
+from src.langraphAgenticAI.utils.env_loader import load_env_variables, get_env_var
+
+# Load environment variables from .env file
+load_env_variables()
 
 def initialize_graph(user_controls):
     """

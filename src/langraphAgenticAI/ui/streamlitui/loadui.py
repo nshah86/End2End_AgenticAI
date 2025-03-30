@@ -4,6 +4,7 @@ from datetime import date
 from langchain_core.messages import AIMessage, HumanMessage
 from src.langraphAgenticAI.ui.uiconfigfile import Config
 from src.langraphAgenticAI.LLMS.groqllm import GroqLLM
+from src.langraphAgenticAI.utils.env_loader import get_env_var
 
 class LoadStreamUI:
     def __init__(self):
@@ -27,7 +28,7 @@ class LoadStreamUI:
             
             # API Key Input (hidden)
             api_key = st.text_input("API Key", type="password", 
-                                    value=os.environ.get("GROQ_API_KEY", ""))
+                                    value=get_env_var("GROQ_API_KEY", ""))
             self.user_controls["GROQ_API_KEY"] = api_key
             
             # LLM Provider Selection
@@ -38,6 +39,16 @@ class LoadStreamUI:
                       1 if self.llm_options['llm_option'] == 'OpenAI' else 2
             )
             self.user_controls["llm_provider"] = llm_provider
+            
+            # Set API key based on provider
+            if llm_provider == "OpenAI":
+                openai_api_key = st.text_input("OpenAI API Key", type="password",
+                                            value=get_env_var("OPENAI_API_KEY", ""))
+                self.user_controls["OPENAI_API_KEY"] = openai_api_key
+            elif llm_provider == "Anthropic":
+                anthropic_api_key = st.text_input("Anthropic API Key", type="password",
+                                                value=get_env_var("ANTHROPIC_API_KEY", ""))
+                self.user_controls["ANTHROPIC_API_KEY"] = anthropic_api_key
             
             # Model Selection based on provider
             model_options = self.llm_options['model_options'][llm_provider.lower()]

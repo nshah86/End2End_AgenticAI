@@ -24,11 +24,37 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+4. Set up environment variables:
+   - Copy the `.env.example` file to a new file named `.env`
+   - Add your API keys and configuration to the `.env` file
+```bash
+# Windows
+copy .env.example .env
+
+# Unix/MacOS
+cp .env.example .env
+```
+
+## Running the Application
+
+To start the application, run:
+```bash
+streamlit run src/langraphAgenticAI/main.py
+```
+
 ## Project Structure
 
 - `requirements.txt`: Project dependencies
+- `.env`: Environment variables (API keys, configuration) - not committed to Git
 - `venv/`: Python virtual environment (ignored by git)
-- Additional project files will be added as development progresses
+- `src/langraphAgenticAI/`: Main application code
+  - `LLMS/`: LLM providers (Groq, OpenAI, Anthropic)
+  - `graph/`: LangGraph implementation
+  - `nodes/`: Graph nodes for processing
+  - `state/`: State management for the graph
+  - `ui/`: User interface components
+  - `utils/`: Utility functions
+  - `main.py`: Application entry point
 
 ## Technologies Used
 
