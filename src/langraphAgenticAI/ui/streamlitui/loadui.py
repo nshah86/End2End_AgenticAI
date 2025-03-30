@@ -10,6 +10,7 @@ class LoadStreamUI:
         self.config = Config()
         self.llm_options = self.config.get_llm_options()
         self.user_controls = {}
+        self.message_processor = None
         
     def setup_page(self):
         """Set up the Streamlit page configuration."""
@@ -126,12 +127,16 @@ class LoadStreamUI:
             # Add AI response to chat history
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
-                    # Get the appropriate LLM and generate response
-                    llm = self.get_llm()
-                    if llm:
-                        response = llm.generate_response(prompt)
+                    # Process the message using the provided processor
+                    if self.message_processor:
+                        response = self.message_processor(prompt)
                     else:
-                        response = "Unable to initialize LLM. Please check your configuration."
+                        # Fallback to direct LLM if no processor is set
+                        llm = self.get_llm()
+                        if llm:
+                            response = llm.generate_response(prompt)
+                        else:
+                            response = "Unable to initialize LLM. Please check your configuration."
                     
                     st.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
